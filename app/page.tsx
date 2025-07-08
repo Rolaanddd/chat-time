@@ -1,103 +1,138 @@
-import Image from "next/image";
+//  app/page.tsx
 
-export default function Home() {
+"use client";
+
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { Righteous } from "next/font/google";
+const righteous = Righteous({
+  subsets: ["latin"],
+  weight: "400",
+});
+
+export default function Page() {
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isRegister, setIsRegister] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const capitalizeFirst = (value: string) => {
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("Login details:", { email, password });
+    // handle login
+  };
+
+  const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("Registration details:", { name, city, email, password });
+    // handle registration
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="grid h-screen tracking-[1px] py-2 pr-2 lg:grid-cols-2 grid-rows-1">
+      <div className="flex justify-center items-center">
+        <div className="w-7/10">
+          <h1 className="text-[48px] mb-5 w-full font-bold">
+            {isRegister ? "Create Account" : "Welcome Back!"}
+          </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+          <form onSubmit={isRegister ? handleRegister : handleLogin}>
+            {isRegister && (
+              <>
+                <h3 className="text-[17px]">Name:</h3>
+                <input
+                  type="text"
+                  value={name}
+                  required
+                  onChange={(e) => setName(capitalizeFirst(e.target.value))}
+                  placeholder="Enter your full name"
+                  className="w-full text-[17px] p-3 mt-2 mb-4 rounded-[5px] border-[1px] focus:outline-none border-black/25"
+                />
+              </>
+            )}
+            {isRegister && (
+              <>
+                <h3 className="text-[17px]">City:</h3>
+                <input
+                  type="text"
+                  value={city}
+                  required
+                  onChange={(e) => setCity(capitalizeFirst(e.target.value))}
+                  placeholder="Enter your city"
+                  className="w-full text-[17px] p-3 mt-2 mb-4 rounded-[5px] focus:outline-none border-[1px] border-black/25"
+                />
+              </>
+            )}
+
+            <h3 className="text-[17px]">Email:</h3>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Enter your @gmail.com"
+              className="w-full text-[17px] p-3 mt-2 mb-4 rounded-[5px] focus:outline-none border-[1px] border-black/25"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <h3 className="text-[17px]">Password:</h3>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                required
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className="w-full text-[17px] p-3 pr-12 mt-2 mb-4 rounded-[5px] focus:outline-none border-[1px] border-black/25"
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute right-3 top-45/100 transform -translate-y-1/2 text-black"
+              >
+                {showPassword ? <EyeOff size={25} /> : <Eye size={25} />}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full p-2 h-[58px] text-[21px] mt-2 mb-4 font-bold text-white bg-[#FDC500] rounded-[5px] hover:bg-[#fdbb00]"
+            >
+              {isRegister ? "Register" : "Login"}
+            </button>
+          </form>
+
+          <hr className="my-6 border-t-1 border-black/25" />
+
+          <div className="flex flex-col items-center">
+            <p className="text-[18px]">
+              {isRegister
+                ? "Already have an account?"
+                : "Don't have an account?"}{" "}
+              <button
+                onClick={() => setIsRegister(!isRegister)}
+                className="text-[#FDC500] hover:underline font-bold"
+              >
+                {isRegister ? "Login" : "Register"}
+              </button>
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      <div className="h-full flex justify-center items-center w-full bg-[#FDC500]">
+        <h1 className={`${righteous.className} text-[96px] text-white`}>
+          CHAT TIME
+        </h1>
+      </div>
     </div>
   );
 }

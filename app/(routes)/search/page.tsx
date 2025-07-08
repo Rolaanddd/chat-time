@@ -1,0 +1,231 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Check } from "lucide-react";
+
+type Status = "none" | "requested" | "in-circle";
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  avatar: string;
+  status: Status;
+}
+
+const initialUsers: User[] = [
+  {
+    id: 13,
+    name: "Mona Lisa",
+    email: "mona.lisa@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "none",
+  },
+  {
+    id: 14,
+    name: "Leonardo Da Vinci",
+    email: "leonardo.davinci@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "requested",
+  },
+  {
+    id: 15,
+    name: "Ada Lovelace",
+    email: "ada.lovelace@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "in-circle",
+  },
+  {
+    id: 16,
+    name: "Paul Walker",
+    email: "paul.walker@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "none",
+  },
+  {
+    id: 17,
+    name: "Grace Hopper",
+    email: "grace.hopper@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "requested",
+  },
+  {
+    id: 18,
+    name: "Alan Turing",
+    email: "alan.turing@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "in-circle",
+  },
+  {
+    id: 19,
+    name: "Marie Curie",
+    email: "marie.curie@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "none",
+  },
+  {
+    id: 20,
+    name: "Nikola Tesla",
+    email: "nikola.tesla@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "requested",
+  },
+  {
+    id: 21,
+    name: "Albert Einstein",
+    email: "albert.einstein@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "in-circle",
+  },
+  {
+    id: 22,
+    name: "Isaac Newton",
+    email: "isaac.newton@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "none",
+  },
+  {
+    id: 23,
+    name: "Rosalind Franklin",
+    email: "rosalind.franklin@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "requested",
+  },
+  {
+    id: 24,
+    name: "Charles Darwin",
+    email: "charles.darwin@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "in-circle",
+  },
+  {
+    id: 25,
+    name: "Katherine Johnson",
+    email: "katherine.johnson@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "none",
+  },
+  {
+    id: 26,
+    name: "Steve Jobs",
+    email: "steve.jobs@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "requested",
+  },
+  {
+    id: 27,
+    name: "Bill Gates",
+    email: "bill.gates@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "in-circle",
+  },
+  {
+    id: 28,
+    name: "Tim Berners-Lee",
+    email: "tim.bernerslee@gmail.com",
+    avatar: "/assets/avatar.png",
+    status: "none",
+  },
+];
+
+export default function SearchPeople() {
+  const [users, setUsers] = useState(initialUsers);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300); // 400ms debounce
+
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const handleRequest = (id: number) => {
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === id ? { ...user, status: "requested" } : user
+      )
+    );
+  };
+
+  const filteredUsers = users.filter((user) =>
+    `${user.name} ${user.email}`
+      .toLowerCase()
+      .includes(debouncedSearch.toLowerCase())
+  );
+
+  return (
+    <div className="">
+      <div className="border-b-[1px] p-2 px-5 flex items-center border-black/25">
+        <h3 className="font-bold text-[27px]">Search for People</h3>
+      </div>
+
+      <div className="p-4">
+        <input
+          type="text"
+          placeholder="Search by entering name or email..."
+          className="w-full p-3 py-3 mb-6 rounded-md border bg-[#fdc500]/10 border-black/25 focus:outline-none placeholder:text-gray-500"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        {filteredUsers.length === 0 ? (
+          <div className="text-center text-gray-500 text-lg py-10">
+            No users found
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 tracking-wide text-black/70  sm:grid-cols-2 gap-3 rounded-md md:grid-cols-3">
+            {filteredUsers.map((user) => (
+              <div
+                key={user.id}
+                className="bg-white-50 p-4 flex items-center hover:text-black/100 bg-[#fdc500]/5 justify-between hover:shadow-md transition rounded-sm  border-[0.25px] border-black/25"
+              >
+                <div className="w-20 h-20 relative ">
+                  <Image
+                    src={user.avatar}
+                    alt={user.name}
+                    fill
+                    className="rounded-full object-cover"
+                  />
+                </div>
+                <div className="flex gap-5 items-center justify-between">
+                  <div>
+                    <h3 className="text-[20px] font-bold">{user.name}</h3>
+                    <p className="text-[13px] text-gray-600">{user.email}</p>
+                  </div>
+                  <div>
+                    {user.status === "none" && (
+                      <button
+                        onClick={() => handleRequest(user.id)}
+                        className="px-4 py-3 w-4/4 rounded bg-[#52B2CF] text-[15px] text-white font-medium  transition"
+                      >
+                        Request to chat
+                      </button>
+                    )}
+
+                    {user.status === "requested" && (
+                      <button
+                        disabled
+                        className="px-4 py-3 w-4/4 rounded bg-[#52B2CF] text-[15px] text-white font-medium flex items-center justify-center gap-1 cursor-default"
+                      >
+                        Requested <Check size={18} className="ml-1" />
+                      </button>
+                    )}
+
+                    {user.status === "in-circle" && (
+                      <div className="px-4 py-3 w-/full rounded bg-[#5CBA47] text-[15px] text-white font-medium text-center">
+                        In your Circle
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
