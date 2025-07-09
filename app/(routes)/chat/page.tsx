@@ -21,7 +21,7 @@ export default function Page() {
 
   return (
     <div className="grid md:grid-cols-100">
-      <div className="col-span-25 py-2 pt-3 px-3 border-r-[1px] bg-[#fdc500]/3 border-black/35 h-screen">
+      <div className="col-span-25 py-2 sticky top-0 pt-3 px-3 border-r-[1px] bg-[#fdc500]/3 border-black/35 h-screen">
         <h1 className="text-[27px] ml-1 font-bold">Your Messages</h1>
         <input
           type="text"

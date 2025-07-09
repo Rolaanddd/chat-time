@@ -14,7 +14,7 @@ interface User {
   status: Status;
 }
 
-const initialUsers: User[] = [
+const totalUsers: User[] = [
   {
     id: 13,
     name: "Mona Lisa",
@@ -130,7 +130,7 @@ const initialUsers: User[] = [
 ];
 
 export default function SearchPeople() {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState(totalUsers);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
 
@@ -176,30 +176,37 @@ export default function SearchPeople() {
             No users found
           </div>
         ) : (
-          <div className="grid grid-cols-1 tracking-wide text-black/70  sm:grid-cols-2 gap-3 rounded-md md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 tracking-wide text-black/70">
             {filteredUsers.map((user) => (
               <div
                 key={user.id}
-                className="bg-white-50 p-4 flex items-center hover:text-black/100 bg-[#fdc500]/5 justify-between hover:shadow-md transition rounded-sm  border-[0.25px] border-black/25"
+                className="bg-[#fdc500]/10 p-6 rounded-xl border border-black/20 shadow-sm hover:shadow-md transition"
               >
-                <div className="w-20 h-20 relative ">
-                  <Image
-                    src={user.avatar}
-                    alt={user.name}
-                    fill
-                    className="rounded-full object-cover"
-                  />
-                </div>
-                <div className="flex gap-5 items-center justify-between">
-                  <div>
-                    <h3 className="text-[20px] font-bold">{user.name}</h3>
-                    <p className="text-[13px] text-gray-600">{user.email}</p>
+                <div className="flex flex-col items-center gap-4 text-center">
+                  {/* Avatar */}
+                  <div className="relative w-24 h-24">
+                    <Image
+                      src={user.avatar}
+                      alt={user.name}
+                      fill
+                      className="rounded-full object-cover border border-black/10"
+                    />
                   </div>
+
+                  {/* Name & Email */}
                   <div>
+                    <h3 className="text-xl font-semibold text-black">
+                      {user.name}
+                    </h3>
+                    <p className="text-sm text-gray-600">{user.email}</p>
+                  </div>
+
+                  {/* Status Button */}
+                  <div className="w-full">
                     {user.status === "none" && (
                       <button
                         onClick={() => handleRequest(user.id)}
-                        className="px-4 py-3 w-4/4 rounded bg-[#52B2CF] text-[15px] text-white font-medium  transition"
+                        className="w-full px-4 py-2 rounded-md bg-[#52B2CF] text-white text-sm font-medium transition hover:brightness-110"
                       >
                         Request to chat
                       </button>
@@ -208,14 +215,14 @@ export default function SearchPeople() {
                     {user.status === "requested" && (
                       <button
                         disabled
-                        className="px-4 py-3 w-4/4 rounded bg-[#52B2CF] text-[15px] text-white font-medium flex items-center justify-center gap-1 cursor-default"
+                        className="w-full px-4 py-2 rounded-md bg-[#52B2CF] text-white text-sm font-medium flex items-center justify-center gap-1 cursor-default"
                       >
-                        Requested <Check size={18} className="ml-1" />
+                        Requested <Check size={16} />
                       </button>
                     )}
 
                     {user.status === "in-circle" && (
-                      <div className="px-4 py-3 w-/full rounded bg-[#5CBA47] text-[15px] text-white font-medium text-center">
+                      <div className="w-full px-4 py-2 rounded-md bg-[#5CBA47] text-white text-sm font-medium text-center">
                         In your Circle
                       </div>
                     )}
