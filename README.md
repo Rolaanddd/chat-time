@@ -1,4 +1,4 @@
-# 💬 ChatConnect
+# 💬 ChatTime
 
 A real-time chat application built with Next.js, Tailwind CSS, Auth.js, Supabase, Prisma, and Socket.IO.
 
