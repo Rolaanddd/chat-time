@@ -1,10 +1,10 @@
-//  app/page.tsx
-
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import { Righteous } from "next/font/google";
+
 const righteous = Righteous({
   subsets: ["latin"],
   weight: "400",
@@ -26,16 +26,41 @@ export default function Page() {
     setShowPassword((prev) => !prev);
   };
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Login details:", { email, password });
-    // handle login
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, city, email, password }),
+    });
+
+    if (res.ok) {
+      alert("Account created! Now login.");
+      setIsRegister(false);
+      setName("");
+      setCity("");
+      setEmail("");
+      setPassword("");
+    } else {
+      const err = await res.text();
+      alert(err);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Registration details:", { name, city, email, password });
-    // handle registration
+
+    const res = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+
+    if (res?.ok) {
+      window.location.href = "/chat"; // You can change this to the homepage or dashboard
+    } else {
+      alert("Invalid credentials");
+    }
   };
 
   return (
@@ -96,7 +121,7 @@ export default function Page() {
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className="absolute right-3 top-45/100 transform -translate-y-1/2 text-black"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black"
               >
                 {showPassword ? <EyeOff size={25} /> : <Eye size={25} />}
               </button>

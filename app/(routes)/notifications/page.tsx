@@ -1,6 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Check } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface MessageNotification {
   id: string;
@@ -23,6 +25,19 @@ interface RequestNotification {
 type Notification = MessageNotification | RequestNotification;
 
 const NotificationsComponent: React.FC = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (status === "loading") return; // wait for session
+    if (!session) {
+      router.push("/"); // redirect to login
+    } else {
+      setLoading(false); // session present
+    }
+  }, [session, status, router]);
+
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: "1",
@@ -187,6 +202,9 @@ const NotificationsComponent: React.FC = () => {
       </div>
     </div>
   );
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="">

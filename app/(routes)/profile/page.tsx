@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { SquarePen } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const initialUser = {
   name: "Agnes Patricia",
@@ -29,8 +31,18 @@ const initialUser = {
 };
 
 export default function ProfilePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [avatarUrl, setAvatarUrl] = useState(initialUser.avatar);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (status === "loading") return; // wait for session
+    if (!session) {
+      router.push("/"); // redirect to login if not authenticated
+    }
+  }, [session, status, router]);
 
   const handleEditPhoto = () => {
     fileInputRef.current?.click();
@@ -43,6 +55,10 @@ export default function ProfilePage() {
       setAvatarUrl(imageUrl);
     }
   };
+
+  if (status === "loading" || !session) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="w-full h-screen grid grid-rows-[auto_1fr] overflow-hidden">

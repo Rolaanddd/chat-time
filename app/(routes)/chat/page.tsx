@@ -1,10 +1,13 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import ChatContent from "@/app/components/ChatContent";
-import ChatList from "@/app/components/ChatList";
+import ChatList from "@/components/ChatList";
+import ChatContent from "@/components/ChatContent";
 
 const users = [
+  // your users array here
   {
     id: 6,
     name: "Sherwin",
@@ -13,65 +16,65 @@ const users = [
   },
   {
     id: 7,
-    name: "Alex",
-    email: "alex@gmail.com",
+    name: "Alina",
+    email: "alina@gmail.com",
     avatar: "/assets/avatar.png",
   },
   {
     id: 8,
-    name: "Emma",
-    email: "emma.johnson@example.com",
+    name: "Marcus",
+    email: "marcus@gmail.com",
     avatar: "/assets/avatar.png",
   },
   {
     id: 9,
-    name: "Liam",
-    email: "liam.smith@example.com",
+    name: "Jasmine",
+    email: "jasmine@gmail.com",
     avatar: "/assets/avatar.png",
   },
   {
     id: 10,
-    name: "Olivia",
-    email: "olivia.brown@example.com",
+    name: "Derek",
+    email: "derek@gmail.com",
     avatar: "/assets/avatar.png",
   },
   {
     id: 11,
-    name: "Noah",
-    email: "noah.james@example.com",
-    avatar: "/assets/avatar.png",
-  },
-  {
-    id: 12,
-    name: "Sophia",
-    email: "sophia.miller@example.com",
-    avatar: "/assets/avatar.png",
-  },
-  {
-    id: 13,
-    name: "Mason",
-    email: "mason.wilson@example.com",
-    avatar: "/assets/avatar.png",
-  },
-  {
-    id: 14,
-    name: "Ava",
-    email: "ava.moore@example.com",
+    name: "Nina",
+    email: "nina@gmail.com",
     avatar: "/assets/avatar.png",
   },
 ];
 
 export default function Page() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(users[0]);
+  const [loading, setLoading] = useState(true);
 
+  // Redirect if no session after loading
+  useEffect(() => {
+    if (status === "loading") return; // wait for session to load
+    if (!session) {
+      router.push("/"); // redirect to login if not logged in
+    } else {
+      setLoading(false); // session present, stop loading
+    }
+  }, [session, status, router]);
+
+  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="grid md:grid-cols-100">

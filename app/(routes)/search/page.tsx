@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Check } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type Status = "none" | "requested" | "in-circle";
 
@@ -35,20 +37,6 @@ const totalUsers: User[] = [
     email: "ada.lovelace@gmail.com",
     avatar: "/assets/avatar.png",
     status: "in-circle",
-  },
-  {
-    id: 16,
-    name: "Paul Walker",
-    email: "paul.walker@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "none",
-  },
-  {
-    id: 17,
-    name: "Grace Hopper",
-    email: "grace.hopper@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "requested",
   },
   {
     id: 18,
@@ -130,14 +118,23 @@ const totalUsers: User[] = [
 ];
 
 export default function SearchPeople() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [users, setUsers] = useState(totalUsers);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === "loading") return; // wait for loading
+    if (!session) router.push("/"); // redirect to login
+  }, [session, status, router]);
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 300); // 400ms debounce
+    }, 300);
 
     return () => clearTimeout(handler);
   }, [search]);
@@ -155,6 +152,10 @@ export default function SearchPeople() {
       .toLowerCase()
       .includes(debouncedSearch.toLowerCase())
   );
+
+  if (status === "loading" || !session) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="">
