@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import TimeDisplay from "./TimeDisplay";
 
@@ -10,44 +10,66 @@ type Message = {
   timestamp: string;
 };
 
-export default function ChatContent() {
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  avatar: string;
+};
+
+const initialMessages: Record<number, Message[]> = {};
+
+export default function ChatContent({ user }: { user: User }) {
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messagesMap, setMessagesMap] = useState(initialMessages);
   const [input, setInput] = useState("");
 
-  // Simulate dynamic fetch (replace this with real DB/API call later)
-  useEffect(() => {
-    const simulatedMessages: Message[] = [
-      {
-        text: "Hey there!",
-        sender: "other",
-        timestamp: new Date(
-          Date.now() - 30 * 24 * 60 * 60 * 1000
-        ).toISOString(), // 1 month ago
-      },
-      {
-        text: "Hi! How are you?",
-        sender: "me",
-        timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // 6 days ago
-      },
-      {
-        text: "Did you finish the project?",
-        sender: "other",
-        timestamp: new Date(
-          Date.now() - 3 * 24 * 60 * 60 * 1000 + 60000
-        ).toISOString(),
-      },
-      {
-        text: "Yes, I sent it yesterday.",
-        sender: "me",
-        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ];
+  const messages = useMemo(() => {
+    return messagesMap[user.id] || [];
+  }, [messagesMap, user.id]);
 
-    setTimeout(() => {
-      setMessages(simulatedMessages);
-    }, 500); // Simulate network delay
-  }, []);
+  useEffect(() => {
+    // do something with messages
+  }, [messages]);
+
+  useEffect(() => {
+    setMessagesMap((prev) => {
+      if (!prev[user.id]) {
+        const simulatedMessages: Message[] = [
+          {
+            text: "Hey there!",
+            sender: "other",
+            timestamp: new Date(
+              Date.now() - 30 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+          {
+            text: "Hi! How are you?",
+            sender: "me",
+            timestamp: new Date(
+              Date.now() - 6 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+          {
+            text: "Did you finish the project?",
+            sender: "other",
+            timestamp: new Date(
+              Date.now() - 3 * 24 * 60 * 60 * 1000 + 60000
+            ).toISOString(),
+          },
+          {
+            text: "Yes, I sent it yesterday.",
+            sender: "me",
+            timestamp: new Date(
+              Date.now() - 1 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          },
+        ];
+        return { ...prev, [user.id]: simulatedMessages };
+      }
+      return prev; // no change if already exists
+    });
+  }, [user.id]);
 
   useEffect(() => {
     lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -63,7 +85,10 @@ export default function ChatContent() {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, newMsg]);
+    setMessagesMap((prev) => ({
+      ...prev,
+      [user.id]: [...(prev[user.id] || []), newMsg],
+    }));
     setInput("");
   };
 
@@ -88,15 +113,15 @@ export default function ChatContent() {
         <div className="flex items-center space-x-4">
           <div className="w-[74px] h-[74px] relative">
             <Image
-              src="/assets/avatar.png"
-              alt="sherwin"
+              src={user.avatar}
+              alt={user.name}
               fill
               className="rounded-full object-cover"
             />
           </div>
           <div className="-mt-2">
-            <h3 className="font-bold text-[24px]">Sherwin</h3>
-            <p className="text-[14px] text-black/50">sherwin@gmai.com</p>
+            <h3 className="font-bold text-[24px]">{user.name}</h3>
+            <p className="text-[14px] text-black/50">{user.email}</p>
           </div>
         </div>
       </div>
@@ -179,10 +204,10 @@ export default function ChatContent() {
           rows={2}
           placeholder="Type your message..."
           className="flex-1 resize-none text-[16px] py-3 px-3 border-[#000]/35 border-[1px] focus:outline-none rounded-[5px]
-          [&::-webkit-scrollbar]:w-2
-          [&::-webkit-scrollbar-track]:bg-transparent
-          [&::-webkit-scrollbar-thumb]:bg-[#fdc500]/20
-          [&::-webkit-scrollbar-thumb:hover]:bg-[#fdc500]/60]"
+            [&::-webkit-scrollbar]:w-2
+            [&::-webkit-scrollbar-track]:bg-transparent
+            [&::-webkit-scrollbar-thumb]:bg-[#fdc500]/20
+            [&::-webkit-scrollbar-thumb:hover]:bg-[#fdc500]/60]"
         />
         <button
           type="submit"

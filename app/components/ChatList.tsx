@@ -1,88 +1,27 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 
-const users = [
-  {
-    id: 6,
-    name: "Sherwin",
-    email: "sherwin@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 7,
-    name: "Alex",
-    email: "alex@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 8,
-    name: "Maria",
-    email: "maria@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 9,
-    name: "John",
-    email: "john@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 10,
-    name: "Lisa",
-    email: "lisa@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 11,
-    name: "David",
-    email: "david@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 12,
-    name: "Emma",
-    email: "emma@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 13,
-    name: "Noah",
-    email: "noah@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 14,
-    name: "Olivia",
-    email: "olivia@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-  {
-    id: 15,
-    name: "Liam",
-    email: "liam@gmail.com",
-    avatar: "/assets/avatar.png",
-    unreadCount: 0,
-  },
-];
-
-interface ChatListProps {
-  searchTerm: string;
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  avatar: string;
 }
 
-export default function ChatList({ searchTerm }: ChatListProps) {
-  const [activeId, setActiveId] = useState<number | null>(null);
+interface ChatListProps {
+  users: User[];
+  searchTerm: string;
+  onSelectUser: (user: User) => void;
+  selectedUserId: number | null;
+}
 
+export default function ChatList({
+  users,
+  searchTerm,
+  onSelectUser,
+  selectedUserId,
+}: ChatListProps) {
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -106,9 +45,9 @@ export default function ChatList({ searchTerm }: ChatListProps) {
           filteredUsers.map((user, idx) => (
             <div key={user.id}>
               <div
-                onClick={() => setActiveId(user.id)}
+                onClick={() => onSelectUser(user)}
                 className={`flex items-center justify-between p-2 px-5 rounded-[7px] cursor-pointer transition-colors ${
-                  activeId === user.id
+                  selectedUserId === user.id
                     ? "bg-[#FDC500]"
                     : "hover:bg-[#fdc500]/10"
                 }`}
@@ -125,25 +64,22 @@ export default function ChatList({ searchTerm }: ChatListProps) {
                   <div>
                     <h3
                       className={`font-semibold ${
-                        activeId === user.id ? "text-white" : "text-black"
+                        selectedUserId === user.id ? "text-white" : "text-black"
                       }`}
                     >
                       {user.name}
                     </h3>
                     <p
                       className={`text-sm ${
-                        activeId === user.id ? "text-white" : "text-gray-500"
+                        selectedUserId === user.id
+                          ? "text-white"
+                          : "text-gray-500"
                       }`}
                     >
                       {user.email}
                     </p>
                   </div>
                 </div>
-                {user.unreadCount > 0 && (
-                  <span className="text-[13px] text-white font-medium bg-[#FDC500] -mt-8 w-[26px] h-[26px] flex items-center justify-center rounded-full">
-                    {user.unreadCount}
-                  </span>
-                )}
               </div>
               {idx !== filteredUsers.length - 1 && (
                 <div className="h-px bg-[#000]/15 my-2" />
