@@ -1,6 +1,8 @@
+// app/(routes)/search/page.tsx
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Check } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -9,128 +11,28 @@ import { useRouter } from "next/navigation";
 type Status = "none" | "requested" | "in-circle";
 
 interface User {
-  id: number;
+  id: string; // Changed from number to string to match Prisma schema
   name: string;
   email: string;
   avatar: string;
   status: Status;
 }
 
-const totalUsers: User[] = [
-  {
-    id: 13,
-    name: "Mona Lisa",
-    email: "mona.lisa@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "none",
-  },
-  {
-    id: 14,
-    name: "Leonardo Da Vinci",
-    email: "leonardo.davinci@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "requested",
-  },
-  {
-    id: 15,
-    name: "Ada Lovelace",
-    email: "ada.lovelace@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "in-circle",
-  },
-  {
-    id: 18,
-    name: "Alan Turing",
-    email: "alan.turing@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "in-circle",
-  },
-  {
-    id: 19,
-    name: "Marie Curie",
-    email: "marie.curie@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "none",
-  },
-  {
-    id: 20,
-    name: "Nikola Tesla",
-    email: "nikola.tesla@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "requested",
-  },
-  {
-    id: 21,
-    name: "Albert Einstein",
-    email: "albert.einstein@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "in-circle",
-  },
-  {
-    id: 22,
-    name: "Isaac Newton",
-    email: "isaac.newton@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "none",
-  },
-  {
-    id: 23,
-    name: "Rosalind Franklin",
-    email: "rosalind.franklin@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "requested",
-  },
-  {
-    id: 24,
-    name: "Charles Darwin",
-    email: "charles.darwin@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "in-circle",
-  },
-  {
-    id: 25,
-    name: "Katherine Johnson",
-    email: "katherine.johnson@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "none",
-  },
-  {
-    id: 26,
-    name: "Steve Jobs",
-    email: "steve.jobs@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "requested",
-  },
-  {
-    id: 27,
-    name: "Bill Gates",
-    email: "bill.gates@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "in-circle",
-  },
-  {
-    id: 28,
-    name: "Tim Berners-Lee",
-    email: "tim.bernerslee@gmail.com",
-    avatar: "/assets/avatar.png",
-    status: "none",
-  },
-];
-
 export default function SearchPeople() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [users, setUsers] = useState(totalUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
 
-  // Redirect if not authenticated
+  // 🔒 Redirect unauthenticated users
   useEffect(() => {
-    if (status === "loading") return; // wait for loading
-    if (!session) router.push("/"); // redirect to login
+    if (status === "loading") return;
+    if (!session) router.push("/");
   }, [session, status, router]);
 
+  // ⏳ Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -139,7 +41,41 @@ export default function SearchPeople() {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const handleRequest = (id: number) => {
+  // 🌐 Load users from API
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        console.log("Session status:", status);
+        console.log("Session data:", session);
+
+        const res = await fetch("/api/users");
+        const data = await res.json();
+
+        console.log("API Response:", res.status, data);
+
+        if (res.ok) {
+          const withStatus = data.map((user: any) => ({
+            ...user,
+            avatar: user.avatar !== null ? user.avatar : "/assets/avatar.png",
+            status: "none" as Status, // Default
+          }));
+
+          setUsers(withStatus);
+        } else {
+          console.error("API Error:", data.error);
+        }
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      }
+    };
+
+    if (status === "authenticated") {
+      loadUsers();
+    }
+  }, [status, session]);
+
+  const handleRequest = (id: string) => {
+    // Changed from number to string
     setUsers((prev) =>
       prev.map((user) =>
         user.id === id ? { ...user, status: "requested" } : user
@@ -158,11 +94,13 @@ export default function SearchPeople() {
   }
 
   return (
-    <div className="">
+    <div>
+      {/* Header */}
       <div className="border-b-[1px] p-2 px-5 flex items-center border-black/25">
         <h3 className="font-bold text-[27px]">Search for People</h3>
       </div>
 
+      {/* Search Box */}
       <div className="p-4">
         <input
           type="text"
@@ -184,7 +122,6 @@ export default function SearchPeople() {
                 className="bg-[#fdc500]/10 p-6 rounded-xl border border-black/20 shadow-sm hover:shadow-md transition"
               >
                 <div className="flex flex-col items-center gap-4 text-center">
-                  {/* Avatar */}
                   <div className="relative w-24 h-24">
                     <Image
                       src={user.avatar}
@@ -193,16 +130,12 @@ export default function SearchPeople() {
                       className="rounded-full object-cover border border-black/10"
                     />
                   </div>
-
-                  {/* Name & Email */}
                   <div>
                     <h3 className="text-xl font-semibold text-black">
                       {user.name}
                     </h3>
                     <p className="text-sm text-gray-600">{user.email}</p>
                   </div>
-
-                  {/* Status Button */}
                   <div className="w-full">
                     {user.status === "none" && (
                       <button
@@ -212,7 +145,6 @@ export default function SearchPeople() {
                         Request to chat
                       </button>
                     )}
-
                     {user.status === "requested" && (
                       <button
                         disabled
@@ -221,7 +153,6 @@ export default function SearchPeople() {
                         Requested <Check size={16} />
                       </button>
                     )}
-
                     {user.status === "in-circle" && (
                       <div className="w-full px-4 py-2 rounded-md bg-[#5CBA47] text-white text-sm font-medium text-center">
                         In your Circle
