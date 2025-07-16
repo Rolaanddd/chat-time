@@ -1,3 +1,5 @@
+// app/(routes)/profile/page.tsx
+
 "use client";
 
 import Image from "next/image";
@@ -6,58 +8,126 @@ import { SquarePen } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-const initialUser = {
-  name: "Agnes Patricia",
-  email: "agnespatricia@gmail.com",
-  city: "Bangalore",
-  avatar: "/assets/avatar.png",
-  friends: [
-    { name: "Isabella Thomas", email: "isabellathomas@example.com" },
-    { name: "Noah Harris", email: "noahharris@example.com" },
-    { name: "Mia Clark", email: "miaclark@example.com" },
-    { name: "Lucas Walker", email: "lucaswalker@example.com" },
-    { name: "Charlotte Young", email: "charlotteyoung@example.com" },
-    { name: "Ethan Martinez", email: "ethanmartinez@example.com" },
-    { name: "Amelia Robinson", email: "ameliarobinson@example.com" },
-    { name: "Benjamin Lee", email: "benjaminlee@example.com" },
-    { name: "Emily King", email: "emilyking@example.com" },
-    { name: "Henry Scott", email: "henryscott@example.com" },
-    { name: "Sofia Adams", email: "sofiaadams@example.com" },
-    { name: "Jack Turner", email: "jackturner@example.com" },
-    { name: "Grace Hill", email: "gracehill@example.com" },
-    { name: "William Baker", email: "williambaker@example.com" },
-    { name: "Ava Nelson", email: "avanelson@example.com" },
-  ],
-};
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  city: string;
+  avatar: string | null;
+}
+
+interface Friend {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
 
-  const [avatarUrl, setAvatarUrl] = useState(initialUser.avatar);
+  const [user, setUser] = useState<User | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string>("/assets/avatar.png");
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (status === "loading") return; // wait for session
+    if (status === "loading") return;
     if (!session) {
-      router.push("/"); // redirect to login if not authenticated
+      router.push("/");
+      return;
     }
+
+    // Fetch user profile data
+    const fetchUserData = async () => {
+      try {
+        const res = await fetch("/api/profile");
+        if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
+          setAvatarUrl(userData.avatar || "/assets/avatar.png");
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    };
+
+    // Fetch friends (accepted requests)
+    const fetchFriends = async () => {
+      try {
+        const res = await fetch("/api/friends");
+        if (res.ok) {
+          const friendsData = await res.json();
+          setFriends(friendsData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch friends:", error);
+      }
+    };
+
+    fetchUserData();
+    fetchFriends();
   }, [session, status, router]);
 
   const handleEditPhoto = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setAvatarUrl(imageUrl);
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const res = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const { avatarUrl: newAvatarUrl } = await res.json();
+        setAvatarUrl(newAvatarUrl);
+
+        // Update the session with new avatar
+        await update();
+
+        // Update local user state
+        setUser((prev) => (prev ? { ...prev, avatar: newAvatarUrl } : null));
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to update avatar");
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      alert("Failed to upload image");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  if (status === "loading" || !session) {
-    return <div>Loading...</div>;
+  if (status === "loading" || !session || !user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -86,13 +156,15 @@ export default function ProfilePage() {
               className="hidden"
               ref={fileInputRef}
               onChange={handleFileChange}
+              disabled={isUploading}
             />
             <button
               onClick={handleEditPhoto}
-              className="absolute top-6 right-6 flex items-center gap-2 text-white text-sm bg-[#fdc500] hover:brightness-110 active:brightness-95 transition px-4 py-2 rounded-md shadow"
+              disabled={isUploading}
+              className="absolute top-6 right-6 flex items-center gap-2 text-white text-sm bg-[#fdc500] hover:brightness-110 active:brightness-95 transition px-4 py-2 rounded-md shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <SquarePen size={18} />
-              Edit Photo
+              {isUploading ? "Uploading..." : "Edit Photo"}
             </button>
           </div>
 
@@ -101,23 +173,23 @@ export default function ProfilePage() {
             <div>
               <p className="text-[14px] text-black/60">Name</p>
               <h2 className="text-[22px] font-semibold text-black">
-                {initialUser.name}
+                {user.name}
               </h2>
             </div>
             <div>
               <p className="text-[14px] text-black/60">Email</p>
-              <p className="text-[18px] text-black">{initialUser.email}</p>
+              <p className="text-[18px] text-black">{user.email}</p>
             </div>
             <div>
               <p className="text-[14px] text-black/60">City</p>
-              <p className="text-[18px] text-black">{initialUser.city}</p>
+              <p className="text-[18px] text-black">{user.city}</p>
             </div>
           </div>
 
           {/* Circle Count */}
           <div className="px-6 py-4">
             <h2 className="text-[22px] font-bold text-black">
-              In your Circle: {initialUser.friends.length}
+              In your Circle: {friends.length}
             </h2>
           </div>
         </div>
@@ -129,12 +201,14 @@ export default function ProfilePage() {
           </h1>
 
           <div className="px-6 py-4 space-y-4">
-            {initialUser.friends.length === 0 ? (
-              <p className="text-black/60 text-[16px]">You have no friends</p>
+            {friends.length === 0 ? (
+              <p className="text-black/60 text-[16px]">
+                You have no friends yet
+              </p>
             ) : (
-              initialUser.friends.map((friend, idx) => (
+              friends.map((friend) => (
                 <div
-                  key={idx}
+                  key={friend.id}
                   className="border-b border-black/10 pb-3 last:border-b-0"
                 >
                   <p className="font-semibold text-[18px] text-black">
