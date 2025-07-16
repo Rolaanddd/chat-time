@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ChatList from "@/components/ChatList";
 import ChatContent from "@/components/ChatContent";
+import Loader from "@/components/Loader";
 
 const users = [
   // your users array here
@@ -73,7 +74,7 @@ export default function Page() {
   }, [search]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   return (

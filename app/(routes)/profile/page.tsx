@@ -7,6 +7,7 @@ import { useRef, useState, useEffect } from "react";
 import { SquarePen } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Loader from "@/components/Loader";
 
 interface User {
   id: string;
@@ -121,11 +122,14 @@ export default function ProfilePage() {
       setIsUploading(false);
     }
   };
+  if (status === "loading" || !user) {
+    return <Loader />;
+  }
 
-  if (status === "loading" || !session || !user) {
+  if (!session) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-lg">Loading...</div>
+        <div className="text-lg">No session found...</div>
       </div>
     );
   }

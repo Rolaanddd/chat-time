@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Check } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Loader from "@/components/Loader";
 
 type Status = "none" | "requested" | "in-circle";
 
@@ -90,7 +91,7 @@ export default function SearchPeople() {
   );
 
   if (status === "loading" || !session) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   return (

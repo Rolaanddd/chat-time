@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import TimeDisplay from "./TimeDisplay";

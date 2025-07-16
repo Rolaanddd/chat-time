@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Check } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Loader from "@/components/Loader";
 
 interface MessageNotification {
   id: string;
@@ -203,7 +204,7 @@ const NotificationsComponent: React.FC = () => {
     </div>
   );
   if (loading) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   return (
