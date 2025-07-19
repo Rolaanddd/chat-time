@@ -9,10 +9,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
 
-type Status = "none" | "requested" | "in-circle";
+type Status = "none" | "requested" | "in-circle" | "pending-received";
 
 interface User {
-  id: string; // Changed from number to string to match Prisma schema
+  id: string;
   name: string;
   email: string;
   avatar: string;
@@ -26,6 +26,7 @@ export default function SearchPeople() {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [loadingRequest, setLoadingRequest] = useState<string | null>(null);
 
   // 🔒 Redirect unauthenticated users
   useEffect(() => {
@@ -46,24 +47,26 @@ export default function SearchPeople() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        console.log("Session status:", status);
-        console.log("Session data:", session);
+        const [usersRes, statusRes] = await Promise.all([
+          fetch("/api/users"),
+          fetch("/api/users/status"),
+        ]);
 
-        const res = await fetch("/api/users");
-        const data = await res.json();
+        const usersData = await usersRes.json();
+        const statusData = statusRes.ok ? await statusRes.json() : {};
 
-        console.log("API Response:", res.status, data);
-
-        if (res.ok) {
-          const withStatus = data.map((user: any) => ({
-            ...user,
-            avatar: user.avatar !== null ? user.avatar : "/assets/avatar.png",
-            status: "none" as Status, // Default
-          }));
+        if (usersRes.ok) {
+          const withStatus = usersData
+            .filter((user: any) => user.email !== session?.user?.email) // Exclude current user
+            .map((user: any) => ({
+              ...user,
+              avatar: user.avatar !== null ? user.avatar : "/assets/avatar.png",
+              status: statusData[user.id] || "none",
+            }));
 
           setUsers(withStatus);
         } else {
-          console.error("API Error:", data.error);
+          console.error("API Error:", usersData.error);
         }
       } catch (err) {
         console.error("Failed to fetch users", err);
@@ -75,13 +78,38 @@ export default function SearchPeople() {
     }
   }, [status, session]);
 
-  const handleRequest = (id: string) => {
-    // Changed from number to string
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === id ? { ...user, status: "requested" } : user
-      )
-    );
+  const handleRequest = async (userId: string) => {
+    setLoadingRequest(userId);
+
+    try {
+      const response = await fetch("/api/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ receiverId: userId }),
+      });
+
+      if (response.ok) {
+        // Update UI to show request sent
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === userId ? { ...user, status: "requested" } : user
+          )
+        );
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to send request:", errorData.error);
+
+        // Show error message to user
+        alert(errorData.error || "Failed to send friend request");
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+      alert("Failed to send friend request. Please try again.");
+    } finally {
+      setLoadingRequest(null);
+    }
   };
 
   const filteredUsers = users.filter((user) =>
@@ -93,6 +121,61 @@ export default function SearchPeople() {
   if (status === "loading" || !session) {
     return <Loader />;
   }
+
+  const getButtonContent = (user: User) => {
+    if (loadingRequest === user.id) {
+      return (
+        <button
+          disabled
+          className="w-full px-4 py-2 rounded-md bg-gray-400 text-white text-sm font-medium cursor-not-allowed"
+        >
+          Sending...
+        </button>
+      );
+    }
+
+    switch (user.status) {
+      case "none":
+        return (
+          <button
+            onClick={() => handleRequest(user.id)}
+            className="w-full px-4 py-2 rounded-md bg-[#52B2CF] text-white text-sm font-medium transition hover:brightness-110"
+          >
+            Request to chat
+          </button>
+        );
+
+      case "requested":
+        return (
+          <button
+            disabled
+            className="w-full px-4 py-2 rounded-md bg-[#52B2CF] text-white text-sm font-medium flex items-center justify-center gap-1 cursor-default"
+          >
+            Requested <Check size={16} />
+          </button>
+        );
+
+      case "pending-received":
+        return (
+          <button
+            disabled
+            className="w-full px-4 py-2 rounded-md bg-orange-500 text-white text-sm font-medium cursor-default"
+          >
+            Pending Response
+          </button>
+        );
+
+      case "in-circle":
+        return (
+          <div className="w-full px-4 py-2 rounded-md bg-[#5CBA47] text-white text-sm font-medium text-center">
+            In your Circle
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div>
@@ -137,29 +220,7 @@ export default function SearchPeople() {
                     </h3>
                     <p className="text-sm text-gray-600">{user.email}</p>
                   </div>
-                  <div className="w-full">
-                    {user.status === "none" && (
-                      <button
-                        onClick={() => handleRequest(user.id)}
-                        className="w-full px-4 py-2 rounded-md bg-[#52B2CF] text-white text-sm font-medium transition hover:brightness-110"
-                      >
-                        Request to chat
-                      </button>
-                    )}
-                    {user.status === "requested" && (
-                      <button
-                        disabled
-                        className="w-full px-4 py-2 rounded-md bg-[#52B2CF] text-white text-sm font-medium flex items-center justify-center gap-1 cursor-default"
-                      >
-                        Requested <Check size={16} />
-                      </button>
-                    )}
-                    {user.status === "in-circle" && (
-                      <div className="w-full px-4 py-2 rounded-md bg-[#5CBA47] text-white text-sm font-medium text-center">
-                        In your Circle
-                      </div>
-                    )}
-                  </div>
+                  <div className="w-full">{getButtonContent(user)}</div>
                 </div>
               </div>
             ))}
