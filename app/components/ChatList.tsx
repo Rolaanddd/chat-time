@@ -1,3 +1,5 @@
+// app/components/ChatList.tsx
+
 "use client";
 
 import Image from "next/image";

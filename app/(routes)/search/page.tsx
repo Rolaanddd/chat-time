@@ -57,8 +57,8 @@ export default function SearchPeople() {
 
         if (usersRes.ok) {
           const withStatus = usersData
-            .filter((user: any) => user.email !== session?.user?.email) // Exclude current user
-            .map((user: any) => ({
+            .filter((user: User) => user.email !== session?.user?.email)
+            .map((user: User) => ({
               ...user,
               avatar: user.avatar !== null ? user.avatar : "/assets/avatar.png",
               status: statusData[user.id] || "none",
@@ -159,9 +159,9 @@ export default function SearchPeople() {
         return (
           <button
             disabled
-            className="w-full px-4 py-2 rounded-md bg-orange-500 text-white text-sm font-medium cursor-default"
+            className="w-full px-4 py-2 rounded-md bg-[#dc8031] text-white text-sm font-medium cursor-default"
           >
-            Pending Response
+            Awaiting Reply
           </button>
         );
 

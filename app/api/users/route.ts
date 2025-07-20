@@ -10,11 +10,6 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    // Add debugging
-    console.log("Session:", session);
-    console.log("Session user:", session?.user);
-    console.log("Session user email:", session?.user?.email);
-
     if (!session || !session.user?.email) {
       console.log("No session or email found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
