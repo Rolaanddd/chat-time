@@ -5,7 +5,7 @@
 import Image from "next/image";
 
 interface User {
-  id: number;
+  id: string; // Changed from number to string
   name: string;
   email: string;
   avatar: string;
@@ -15,7 +15,7 @@ interface ChatListProps {
   users: User[];
   searchTerm: string;
   onSelectUser: (user: User) => void;
-  selectedUserId: number | null;
+  selectedUserId: string | null; // Changed from number to string
 }
 
 export default function ChatList({
@@ -57,7 +57,7 @@ export default function ChatList({
                 <div className="flex items-center space-x-4">
                   <div className="w-14 h-14 relative">
                     <Image
-                      src={user.avatar}
+                      src={user.avatar || "/assets/avatar.png"}
                       alt={user.name}
                       fill
                       className="rounded-full object-cover"

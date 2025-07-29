@@ -2,6 +2,7 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
+import { SocketProvider } from "../contexts/SocketContext";
 import { ReactNode } from "react";
 
 export default function SessionProviderWrapper({
@@ -9,5 +10,9 @@ export default function SessionProviderWrapper({
 }: {
   children: ReactNode;
 }) {
-  return <SessionProvider>{children}</SessionProvider>;
+  return (
+    <SessionProvider>
+      <SocketProvider>{children}</SocketProvider>
+    </SessionProvider>
+  );
 }

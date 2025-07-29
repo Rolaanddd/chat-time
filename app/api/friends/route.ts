@@ -1,58 +1,63 @@
 // app/api/friends/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "../../../app/generated/prisma"; // Ensure correct import path
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../lib/authOptions";
-import { PrismaClient } from "../../generated/prisma";
-import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session || !session.user?.email) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get current user
     const currentUser = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { id: true },
     });
 
     if (!currentUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get accepted friend requests (both sent and received)
-    const acceptedRequests = await prisma.request.findMany({
+    // Get all accepted friend requests where current user is either sender or receiver
+    const friendRequests = await prisma.request.findMany({
       where: {
-        OR: [
-          { senderId: currentUser.id, status: "accepted" },
-          { receiverId: currentUser.id, status: "accepted" },
+        AND: [
+          { status: "accepted" },
+          {
+            OR: [{ senderId: currentUser.id }, { receiverId: currentUser.id }],
+          },
         ],
       },
       include: {
         sender: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true, email: true, avatar: true },
         },
         receiver: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true, email: true, avatar: true },
         },
       },
     });
 
-    // Extract friends (exclude current user)
-    const friends = acceptedRequests.map((request) => {
-      if (request.senderId === currentUser.id) {
-        return request.receiver;
-      } else {
-        return request.sender;
-      }
+    // Extract friends (the other user in each request)
+    const friends = friendRequests.map((request) => {
+      return request.senderId === currentUser.id
+        ? request.receiver
+        : request.sender;
     });
 
-    return NextResponse.json(friends);
+    // Remove duplicates based on user ID
+    const uniqueFriends = friends.filter(
+      (friend, index, self) =>
+        index === self.findIndex((f) => f.id === friend.id)
+    );
+
+    return NextResponse.json(uniqueFriends);
   } catch (error) {
-    console.error("Friends API Error:", error);
+    console.error("Error fetching friends:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
