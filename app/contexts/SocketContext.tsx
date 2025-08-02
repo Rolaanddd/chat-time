@@ -21,7 +21,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
 
   useEffect(() => {
-    if (!session?.user?.email) return;
+    if (!session?.user?.id) return;
 
     const socketInstance = io(
       process.env.NODE_ENV === "production"
@@ -33,8 +33,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       console.log("Connected to socket server");
       setIsConnected(true);
 
-      // Join user to their personal room
-      socketInstance.emit("join", session.user.email);
+      // Join user to their personal room using user ID
+      socketInstance.emit("join", session.user.id);
     });
 
     socketInstance.on("disconnect", () => {
@@ -47,7 +47,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       socketInstance.close();
     };
-  }, [session?.user?.email]);
+  }, [session?.user?.id]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

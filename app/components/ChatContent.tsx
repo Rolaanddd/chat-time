@@ -40,7 +40,7 @@ export default function ChatContent({ user }: { user: User }) {
   // Fetch messages when user changes
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!user?.id || !session?.user?.email) return;
+      if (!user?.id || !session?.user?.id) return;
 
       setLoading(true);
       try {
@@ -57,7 +57,7 @@ export default function ChatContent({ user }: { user: User }) {
     };
 
     fetchMessages();
-  }, [user?.id, session?.user?.email]);
+  }, [user?.id, session?.user?.id]);
 
   // Socket.io event listeners
   useEffect(() => {
@@ -68,8 +68,8 @@ export default function ChatContent({ user }: { user: User }) {
       if (
         (messageData.senderId === user.id ||
           messageData.receiverId === user.id) &&
-        (messageData.senderId === session?.user?.email ||
-          messageData.receiverId === session?.user?.email)
+        (messageData.senderId === session?.user?.id ||
+          messageData.receiverId === session?.user?.id)
       ) {
         setMessages((prev) => {
           // Check if message already exists to prevent duplicates
@@ -93,7 +93,7 @@ export default function ChatContent({ user }: { user: User }) {
       socket.off("newMessage", handleNewMessage);
       socket.off("userTyping", handleUserTyping);
     };
-  }, [socket, user.id, session?.user?.email]);
+  }, [socket, user.id, session?.user?.id]);
 
   // Auto scroll to bottom when messages change
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function ChatContent({ user }: { user: User }) {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !session?.user?.email || !socket) return;
+    if (!input.trim() || !session?.user?.id || !socket) return;
 
     const messageText = input.trim();
     setInput("");
@@ -142,7 +142,7 @@ export default function ChatContent({ user }: { user: User }) {
       clearTimeout(typingTimeoutRef.current);
     }
     socket.emit("typing", {
-      senderId: session.user.email,
+      senderId: session.user.id,
       receiverId: user.id,
       isTyping: false,
     });
@@ -165,7 +165,7 @@ export default function ChatContent({ user }: { user: User }) {
 
         // Emit via socket for real-time delivery
         socket.emit("sendMessage", {
-          senderId: session.user.email,
+          senderId: session.user.id,
           receiverId: user.id,
           text: messageText,
           messageId: savedMessage.id,
@@ -196,7 +196,7 @@ export default function ChatContent({ user }: { user: User }) {
   }
 
   const isMyMessage = (messageUserId: string) => {
-    return messageUserId === session?.user?.email;
+    return messageUserId === session?.user?.id;
   };
 
   return (
