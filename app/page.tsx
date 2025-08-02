@@ -12,6 +12,8 @@ const righteous = Righteous({
 
 export default function Page() {
   const [name, setName] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
+  const [created, setcreated] = useState(false);
   const [city, setCity] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +37,7 @@ export default function Page() {
     });
 
     if (res.ok) {
-      alert("Account created! Now login.");
+      setcreated(true);
       setIsRegister(false);
       setName("");
       setCity("");
@@ -59,7 +61,7 @@ export default function Page() {
     if (res?.ok) {
       window.location.href = "/chat"; // You can change this to the homepage or dashboard
     } else {
-      alert("Invalid credentials");
+      setIsVisible(!isVisible);
     }
   };
 
@@ -126,6 +128,23 @@ export default function Page() {
                 {showPassword ? <EyeOff size={25} /> : <Eye size={25} />}
               </button>
             </div>
+
+            {!isRegister && (
+              <>
+                {isVisible && (
+                  <div className="mb-2 text-red-600">Invalid Credentials</div>
+                )}
+              </>
+            )}
+            {isRegister && (
+              <>
+                {created && (
+                  <div className="mb-2 text-green-600">
+                    Account Created! Now login
+                  </div>
+                )}
+              </>
+            )}
 
             <button
               type="submit"

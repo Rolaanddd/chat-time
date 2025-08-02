@@ -98,6 +98,7 @@ export default function ChatList({
             return (
               <div key={user.id}>
                 <div
+                  tabIndex={0}
                   onClick={() => handleUserSelect(user)}
                   className={`flex items-center justify-between p-2 px-5 rounded-[7px] cursor-pointer transition-colors relative ${
                     selectedUserId === user.id
