@@ -48,6 +48,15 @@ export default function ChatContent({ user }: { user: User }) {
         if (response.ok) {
           const fetchedMessages = await response.json();
           setMessages(fetchedMessages);
+
+          // Mark messages as read
+          await fetch("/api/messages/mark-read", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ otherUserId: user.id }),
+          });
         }
       } catch (error) {
         console.error("Error fetching messages:", error);

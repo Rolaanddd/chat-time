@@ -42,5 +42,6 @@ model Message {
   receiver   User     @relation("receiverMessages", fields: [receiverId], references: [id])
   receiverId String
   text       String
+  isRead     Boolean  @default(false) // Add this line
   createdAt  DateTime @default(now())
 }
