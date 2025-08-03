@@ -4,11 +4,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bell, MessageCircle, LogOut, User } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   if (pathname === "/") return null;
+
+  const handleLogout = async () => {
+    try {
+      await signOut({
+        callbackUrl: "/", // Redirect to login page
+        redirect: true,
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <div className="w-49/1000 sticky top-0 py-3 flex flex-col justify-between h-screen bg-[#fdc500]">
@@ -45,13 +57,13 @@ export default function Sidebar() {
       </div>
 
       <div className="flex justify-center items-end">
-        <Link
-          href="/logout"
-          className="hover:bg-white/30 transittion rounded-[5px] p-4"
+        <button
+          onClick={handleLogout}
+          className="hover:bg-white/30 transition rounded-[5px] p-4"
           aria-label="logout"
         >
           <LogOut className="w-[27px] h-[27px] text-white" />
-        </Link>
+        </button>
       </div>
     </div>
   );
