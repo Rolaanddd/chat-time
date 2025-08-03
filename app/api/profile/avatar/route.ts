@@ -3,10 +3,17 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../../lib/authOptions";
 import { PrismaClient } from "../../../generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
+import type { UploadApiResponse } from "cloudinary";
 
 const prisma = new PrismaClient();
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,30 +40,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File too large" }, { status: 400 });
     }
 
-    // Create unique filename
-    const timestamp = Date.now();
-    const extension = path.extname(file.name);
-    const filename = `avatar_${timestamp}${extension}`;
-
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-
-    try {
-      await writeFile(path.join(uploadsDir, "test.txt"), "test");
-    } catch (error) {
-      // Directory doesn't exist, create it
-      const fs = require("fs");
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    // Convert file to buffer and save
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const filePath = path.join(uploadsDir, filename);
-    await writeFile(filePath, buffer);
+
+    // Upload to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            resource_type: "image",
+            folder: "chat-app/avatars", // Organize uploads in folders
+            public_id: `avatar_${session.user.email}_${Date.now()}`, // Unique ID
+            transformation: [
+              { width: 200, height: 200, crop: "fill", gravity: "face" }, // Auto-resize and crop to face
+              { quality: "auto", fetch_format: "auto" }, // Optimize quality and format
+            ],
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
+    });
+
+    const avatarUrl = (uploadResult as UploadApiResponse).secure_url;
 
     // Update user avatar in database
-    const avatarUrl = `/uploads/${filename}`;
     await prisma.user.update({
       where: { email: session.user.email },
       data: { avatar: avatarUrl },

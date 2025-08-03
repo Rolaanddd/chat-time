@@ -23,7 +23,7 @@ type User = {
   id: string;
   name: string;
   email: string;
-  avatar: string;
+  avatar: string | null;
 };
 
 export default function ChatContent({ user }: { user: User }) {
@@ -213,12 +213,12 @@ export default function ChatContent({ user }: { user: User }) {
       {/* Header */}
       <div className="border-b-[1px] sticky top-0 p-2 px-5 flex bg-[#FFFBED] items-center border-[#000]/35 z-10">
         <div className="flex items-center space-x-4">
-          <div className="w-[74px] h-[74px] relative">
+          <div className="w-[74px] h-[74px] border-[1px] border-black/20 rounded-full relative">
             <Image
-              src={user.avatar}
+              src={user.avatar || "/assets/avatar.png"}
               alt={user.name}
               fill
-              className="rounded-full object-cover"
+              className="rounded-full border object-cover"
             />
           </div>
           <div className="-mt-2">

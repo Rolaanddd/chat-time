@@ -99,7 +99,8 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
-    async jwt({ token, user }: { token: JWT; user?: any }) {
+    async jwt({ token, user, trigger }) {
+      // <-- NEW VERSION
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -107,6 +108,17 @@ export const authOptions: AuthOptions = {
         token.city = user.city;
         token.avatar = user.avatar;
       }
+
+      // Refresh user data from database when session is updated
+      if (trigger === "update" && token.email) {
+        const freshUser = await prisma.user.findUnique({
+          where: { email: token.email },
+        });
+        if (freshUser) {
+          token.avatar = freshUser.avatar;
+        }
+      }
+
       return token;
     },
   },
