@@ -30,12 +30,24 @@ export default function ChatContent({ user }: { user: User }) {
   const { data: session } = useSession();
   const { socket } = useSocket();
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to scroll to bottom
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ behavior });
+    } else if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  };
 
   // Fetch messages when user changes
   useEffect(() => {
@@ -57,6 +69,11 @@ export default function ChatContent({ user }: { user: User }) {
             },
             body: JSON.stringify({ otherUserId: user.id }),
           });
+
+          // Scroll to bottom immediately after loading messages for new user
+          setTimeout(() => {
+            scrollToBottom("auto");
+          }, 100);
         }
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -84,7 +101,14 @@ export default function ChatContent({ user }: { user: User }) {
           // Check if message already exists to prevent duplicates
           const exists = prev.some((msg) => msg.id === messageData.id);
           if (exists) return prev;
-          return [...prev, messageData];
+
+          // Ensure timestamp is in proper ISO format
+          const normalizedMessage = {
+            ...messageData,
+            createdAt: messageData.createdAt || new Date().toISOString(),
+          };
+
+          return [...prev, normalizedMessage];
         });
       }
     };
@@ -104,10 +128,36 @@ export default function ChatContent({ user }: { user: User }) {
     };
   }, [socket, user.id, session?.user?.id]);
 
-  // Auto scroll to bottom when messages change
+  // Auto scroll to bottom when messages change or loading finishes
   useEffect(() => {
-    lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!loading && messages.length > 0) {
+      // Use a small delay to ensure DOM is updated
+      setTimeout(() => {
+        scrollToBottom();
+      }, 50);
+    }
+  }, [messages, loading]);
+
+  // Additional effect to handle user changes and ensure scroll + focus input
+  useEffect(() => {
+    if (!loading && messages.length > 0) {
+      // When user changes, scroll to bottom after a short delay
+      const timeoutId = setTimeout(() => {
+        scrollToBottom("auto");
+        // Focus the input field after scrolling
+        inputRef.current?.focus();
+      }, 200);
+
+      return () => clearTimeout(timeoutId);
+    } else if (!loading) {
+      // Even if no messages, focus the input when user changes
+      const timeoutId = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [user.id, loading, messages.length]);
 
   // Handle typing indicator
   const handleTyping = () => {
@@ -172,14 +222,22 @@ export default function ChatContent({ user }: { user: User }) {
       if (response.ok) {
         const savedMessage = await response.json();
 
-        // Emit via socket for real-time delivery
-        socket.emit("sendMessage", {
+        // Ensure the saved message has proper timestamp format
+        const messageToEmit = {
           senderId: session.user.id,
           receiverId: user.id,
           text: messageText,
           messageId: savedMessage.id,
-          timestamp: savedMessage.createdAt,
-        });
+          timestamp: savedMessage.createdAt || new Date().toISOString(),
+        };
+
+        // Emit via socket for real-time delivery
+        socket.emit("sendMessage", messageToEmit);
+
+        // Scroll to bottom after sending message
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
       } else {
         console.error("Failed to send message");
         // Optionally show error to user
@@ -232,7 +290,10 @@ export default function ChatContent({ user }: { user: User }) {
       </div>
 
       {/* Chat Body */}
-      <div className="flex-1 overflow-y-auto w-full p-4 space-y-2">
+      <div
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto w-full p-4 space-y-2"
+      >
         {loading ? (
           <div className="flex justify-center items-center h-32">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#fdc500]"></div>
@@ -263,15 +324,14 @@ export default function ChatContent({ user }: { user: User }) {
                 </div>
                 {grouped[label].map((msg, i) => {
                   const isMine = isMyMessage(msg.senderId);
+                  const isLastMessage =
+                    label === groupLabels.at(-1) &&
+                    i === grouped[label].length - 1;
+
                   return (
                     <div
                       key={msg.id}
-                      ref={
-                        label === groupLabels.at(-1) &&
-                        i === grouped[label].length - 1
-                          ? lastMessageRef
-                          : null
-                      }
+                      ref={isLastMessage ? lastMessageRef : null}
                       className={`flex ${
                         isMine ? "justify-end" : "justify-start"
                       }`}
@@ -305,6 +365,7 @@ export default function ChatContent({ user }: { user: User }) {
         className="flex p-3 sticky bottom-0 bg-[#FFFBED] mt-3 border-t-[1px] border-[#000]/35 items-center justify-between gap-3"
       >
         <textarea
+          ref={inputRef}
           value={input}
           onChange={(e) => {
             setInput(e.target.value);
